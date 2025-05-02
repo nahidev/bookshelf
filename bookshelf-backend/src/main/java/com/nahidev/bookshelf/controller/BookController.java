@@ -1,5 +1,7 @@
-package com.nahidev.bookshelf;
+package com.nahidev.bookshelf.controller;
 
+import com.nahidev.bookshelf.service.BookService;
+import com.nahidev.bookshelf.model.Book;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

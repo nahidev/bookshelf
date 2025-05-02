@@ -1,5 +1,7 @@
-package com.nahidev.bookshelf;
+package com.nahidev.bookshelf.service;
 
+import com.nahidev.bookshelf.model.Book;
+import com.nahidev.bookshelf.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
