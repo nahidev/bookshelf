@@ -42,4 +42,9 @@ public class BookController {
     public void putBookById(@PathVariable Integer id, @RequestBody Book book){
         bookService.putBookById(id, book);
     }
+
+    @GetMapping("/export")
+    public String exportBooks(@RequestParam String format) {
+        return bookService.exportBooks(format);
+    }
 }
