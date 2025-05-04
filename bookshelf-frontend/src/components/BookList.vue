@@ -354,7 +354,29 @@ export default {
     },
     cancelDelete() {
       this.showDeleteConfirm = false;  // Ocultar la confirmación
-    }
+    },
+    toggleDropdown() {
+      this.showDropdown = !this.showDropdown; // Alternar visibilidad del menú
+    },
+    exportBooks(format) {
+      fetch(`http://localhost:8080/api/bookshelf/export?format=${format}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al exportar los libros");
+          }
+          return response.text();
+        })
+        .then((data) => {
+          const blob = new Blob([data], { type: format === "json" ? "application/json" : "text/csv" });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `books.${format}`;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((err) => console.error("Error:", err));
+    },
   }
 };
 </script>
@@ -743,4 +765,58 @@ header h1 {
   transition: width 0.3s ease;
 }
 
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.export-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.export-button:hover {
+  background-color: #0056b3;
+}
+
+.dropdown-icon {
+  width: 12px;
+  height: 12px;
+  fill: white;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  background-color: white;
+  color: #333;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+  background-color: #f4f4f4;
+}
 </style>
