@@ -3,27 +3,45 @@
     <header>
       <h1>MY BOOKSHELF 2025</h1>
     </header>
+    <div class="goal-container">
     <div>
       <label for="goalInput">Objetivo de libros leídos:</label>
       <input
         type="number"
         v-model="goalInput"
         placeholder="Introduce un número"
-        :disabled="goal > 0"
+        :disabled="goal > 0 && !editingGoal"
+        class="small-input"
       />
-      <button @click="setGoal" :disabled="goalInput <= 0 || goal > 0">Marcar objetivo</button> <!-- Deshabilita si ya hay un objetivo -->
+      <button class="goal-button"
+        @click="setGoal"
+        :disabled="goalInput <= 0"
+        v-if="!goal || editingGoal"
+      >
+        Marcar objetivo
+      </button>
+      <button class="goal-button"
+        @click="editGoal"
+        v-else
+      >
+        Cambiar objetivo
+      </button>
     </div>
+
     <div class="books-read">
       <p>Libros leídos: {{ books.length }}</p>
     </div>
+
     <div class="progress-container">
       <p>Progreso: {{ progressPercentage }}%</p>
       <div class="progress-bar">
         <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
       </div>
     </div>
+    </div>
     <div class="book-container">
-      <div class="book" v-for="book in books" :key="book.id">
+      <div class="book" v-for="book in books" :key="book.id" :style="{ backgroundImage: `url(${book.imageUrl})` }">
+      <div class="book-content">
         <h3>{{ book.title }}</h3>
         <p><strong>Autor:</strong> {{ book.author }}</p>
         <p><strong>Género:</strong> {{ book.genre }}</p>
@@ -32,15 +50,25 @@
         <button @click="startEdit(book)" class="update-button">Actualizar</button>
       </div>
     </div>
+    </div>
     <div class="form-container">
       <div class="add-book-form">
         <h2>Añadir un nuevo libro</h2>
         <form @submit.prevent="addBook">
-          <input type="text" v-model="newBook.title" placeholder="Título" required />
-          <input type="text" v-model="newBook.author" placeholder="Autor" required />
-          <input type="text" v-model="newBook.genre" placeholder="Género" required />
-          <input type="date" v-model="newBook.readingDate" placeholder="Fecha de lectura" required />
-          <input type="number" v-model="newBook.rating" placeholder="Calificación" min="1" max="5" required />
+          <input type="text" v-model="newBook.title" placeholder="Título" required style="font-size: 16px;" />
+          <input type="text" v-model="newBook.author" placeholder="Autor" required style="font-size: 16px;"/>
+          <input type="text" v-model="newBook.genre" placeholder="Género" required style="font-size: 16px;"/>
+          <input type="date" v-model="newBook.readingDate" placeholder="Fecha de lectura" required style="font-size: 16px;"/>
+          <input type="number" v-model="newBook.rating" placeholder="Nota" min="1" max="5" required style="font-size: 16px;"/>
+          <button type="button" @click="showImageModal = true">Añadir imagen</button>
+          <div v-if="showImageModal" class="modal-overlay">
+            <div class="modal-content">
+              <h3>Introducir URL de imagen</h3>
+              <input type="text" v-model="tempImageUrl" placeholder="https://..." class="edit-input" />
+              <button @click="addImageToBook">Añadir imagen</button>
+              <button @click="showImageModal = false">Cerrar</button>
+            </div>
+          </div>
           <button type="submit" class="submit-button">¡Leído!</button>
         </form>
       </div>
@@ -63,7 +91,25 @@
           <input type="text" v-model="bookToEdit.author" placeholder="Autor" required />
           <input type="text" v-model="bookToEdit.genre" placeholder="Género" required />
           <input type="date" v-model="bookToEdit.readingDate" placeholder="Fecha de lectura" required />
-          <input type="number" v-model="bookToEdit.rating" placeholder="Calificación" min="1" max="5" required />
+          <input type="number" v-model="bookToEdit.rating" placeholder="Nota" min="1" max="5" required />
+          <button type="button" @click="showImageModal = true" class="add-image-button">
+          Añadir imagen
+        </button>
+        <!-- Modal para introducir URL -->
+        <div v-if="showImageModal" class="modal-overlay">
+          <div class="modal-content">
+            <h4>Introduce la URL de la imagen</h4>
+            <input
+              type="text"
+              v-model="newImageUrl"
+              placeholder="https://..."
+            />
+            <div class="modal-buttons">
+              <button type="button" @click="addImageUrl">Añadir imagen</button>
+              <button type="button" @click="showImageModal = false">Cerrar</button>
+            </div>
+          </div>
+        </div>
           <button type="submit" class="submit-button">Actualizar libro</button>
           <button type="button" class="close-button" @click="closeModal">Cerrar</button>
         </form>
@@ -107,6 +153,7 @@ export default {
         genre: "",
         readingDate: "",
         rating: null,
+        imageUrl: "",
       },
       bookToDelete: "", // ID del libro a eliminar
       bookToEdit: null, // Datos del libro que se va a editar
@@ -116,11 +163,29 @@ export default {
       showDeleteConfirm: false,     
       goal: 0, 
       goalInput: "", 
+      editingGoal: false, 
+      showImageModal: false,
+      tempImageUrl: "",
+      newImageUrl: "",
     };
   },
   mounted() {
-    this.fetchBooks();  // Cargar libros existentes
-  },
+    this.fetchBooks();
+    const savedGoal = localStorage.getItem("readingGoal");
+    if (savedGoal) {
+      this.goal = parseInt(savedGoal);
+      this.goalInput = savedGoal;
+    }  
+    const savedImageUrl = localStorage.getItem('bookImage');
+    if (savedImageUrl) {
+      // Si hay una imagen guardada, asignamos su URL al atributo imageUrl de los libros
+      this.books.forEach(book => {
+        if (book.imageUrl === "") {  // Si un libro no tiene imagen, lo asignamos
+          book.imageUrl = savedImageUrl;
+        }
+      });
+    }
+},
   computed: {
     progressPercentage() {
     if (this.goal === 0 || this.books.length === 0) {
@@ -131,16 +196,50 @@ export default {
   },
   },
   methods: {
-    setGoal() {
-    if (this.goalInput && !isNaN(this.goalInput)) {
-        this.goal = parseInt(this.goalInput);  // Convertir goalInput a un número entero
+  addImageUrl() {
+    if (this.bookToEdit) {
+      this.bookToEdit.imageUrl = this.newImageUrl;
+      this.showImageModal = false;
+      this.newImageUrl = "";
     }
-},
-  fetchBooks() {
+  },
+  addImageToBook() {
+      this.newBook.imageUrl = this.tempImageUrl;
+      
+      // Guardar la imagen para este libro específico en localStorage
+      const booksFromStorage = JSON.parse(localStorage.getItem('books')) || [];
+      booksFromStorage.push(this.newBook);
+      localStorage.setItem('books', JSON.stringify(booksFromStorage));
+
+      this.showImageModal = false;
+      this.tempImageUrl = "";
+    },
+    setGoal() {
+      if (this.goalInput && !isNaN(this.goalInput)) {
+      this.goal = parseInt(this.goalInput);
+      localStorage.setItem("readingGoal", this.goal);  // Guardar en localStorage
+      this.editingGoal = false; 
+    }
+  },
+    editGoal() {
+      this.editingGoal = true;
+    },
+    fetchBooks() {
     fetch("http://localhost:8080/api/bookshelf")
       .then((res) => res.json())
-      .then((data) => {
-        this.books = data;
+      .then((dataFromApi) => {
+        const booksFromStorage = JSON.parse(localStorage.getItem("books")) || [];
+
+        // Fusionar datos del servidor con los del localStorage (especialmente imageUrl)
+        const mergedBooks = dataFromApi.map(book => {
+          const localBook = booksFromStorage.find(b => b.id === book.id);
+          return localBook ? { ...book, imageUrl: localBook.imageUrl || book.imageUrl } : book;
+        });
+
+        this.books = mergedBooks;
+
+        // También actualizamos el localStorage para mantenerlo sincronizado
+        localStorage.setItem("books", JSON.stringify(mergedBooks));
       })
       .catch((err) => console.error("Error:", err));
   },
@@ -177,28 +276,50 @@ export default {
     this.isEditing = true;
   },
   updateBook() {
-    fetch(`http://localhost:8080/api/bookshelf/${this.bookToEdit.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(this.bookToEdit),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error al actualizar el libro");
-        }
-        const index = this.books.findIndex((book) => book.id === this.bookToEdit.id);
-        this.books[index] = this.bookToEdit;
-        this.closeModal();
-        this.confirmationMessage = "Libro actualizado correctamente";
-        this.confirmationType = "success";
-        setTimeout(() => {
-        this.confirmationMessage = "";
-        }, 3000);
-      })
-      .catch((err) => console.error("Error:", err));
+  fetch(`http://localhost:8080/api/bookshelf/${this.bookToEdit.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify(this.bookToEdit),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Error al actualizar el libro");
+      }
+
+      // Actualizar el libro en el estado de Vue.js
+      const index = this.books.findIndex((book) => book.id === this.bookToEdit.id);
+      this.books[index] = this.bookToEdit;
+
+      // Actualizar el libro en el localStorage
+      const booksFromStorage = JSON.parse(localStorage.getItem('books')) || [];
+      const storageIndex = booksFromStorage.findIndex((book) => book.id === this.bookToEdit.id);
+
+      if (storageIndex !== -1) {
+        booksFromStorage[storageIndex] = this.bookToEdit; // Actualiza la referencia del libro en el localStorage
+        localStorage.setItem('books', JSON.stringify(booksFromStorage)); // Guarda los cambios en localStorage
+      }
+
+      // Cerrar el modal
+      this.closeModal();
+
+      // Mostrar el mensaje de confirmación
+      this.confirmationMessage = "Libro actualizado correctamente";
+      this.confirmationType = "success";
+      setTimeout(() => {
+        this.confirmationMessage = "";
+      }, 3000);
+    })
+    .catch((err) => {
+      console.error("Error:", err);
+      this.confirmationMessage = "Error al actualizar el libro";
+      this.confirmationType = "error";
+      setTimeout(() => {
+        this.confirmationMessage = "";
+      }, 3000);
+    });
+},
     closeModal() {
       this.isEditing = false;
       this.bookToEdit = null;
@@ -280,15 +401,18 @@ header h1 {
 }
 
 .book {
-  display: flex; 
-  flex-direction: column;  
-  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.8);  /* Fondo blanco semitransparente */
   border-radius: 8px;
   width: 250px;
   padding: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease-in-out;
-  height: 260px;  /* Fijamos una altura para que todos los divs tengan el mismo tamaño */
+  height: 260px;
+  background-size: cover;
+  background-position: center;
+  position: relative;  /* Necesario para posicionar el contenido por encima de la imagen */
 }
 
 .book:hover {
@@ -299,17 +423,46 @@ header h1 {
   margin: 10px 0 5px;
   font-size: 1.2em;
   color: #333;
+  z-index: 2;  /* Se asegura de que el texto esté encima de la imagen */
 }
 
 .book p {
   font-size: 0.9em;
-  color: #555;
+  color: black;
   margin: 5px 0;
+  z-index: 2;  /* Se asegura de que el texto esté encima de la imagen */
 }
 
 .rating {
   font-size: 1.2em;
   color: #f39c12;
+}
+
+.book-content {
+  position: relative;  /* Para que los elementos dentro del libro se ubiquen sobre la imagen */
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 5px;
+} /*El div book-content quede uniforme, ocupe el mismo espacio*/
+
+.book img.book-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.book::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7); /* Fondo blanquecino con opacidad */
+  border-radius: 8px;
+  z-index: 0;  /* Asegura que el fondo esté debajo de la información */
 }
 
 .form-container {
@@ -387,7 +540,6 @@ header h1 {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-top: 20px;
 }
 
 .submit-button:hover {
@@ -468,7 +620,7 @@ header h1 {
   background-color: #c31d20;
 }
 
-.update-button {
+.update-button, .goal-button {
   margin-top: auto;  /* Empuja el botón hacia abajo dentro de su contenedor */
   padding: 12px 20px;
   background-color: black;
@@ -482,14 +634,9 @@ header h1 {
   text-align: center;
 }
 
-.update-button:hover {
+.update-button:hover, .goal-button:hover {
   background-color: grey;
   transform: scale(1.05);
-}
-
-.update-button:active {
-  background-color: #1e7e34;
-  transform: scale(1);
 }
 
 .confirmation-message {
@@ -522,14 +669,6 @@ header h1 {
   fill: white;
 }
 
-.goal-input {
-  width: 80%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-
 .progress-container {
   width: 200px;
   text-align: center;
@@ -549,8 +688,31 @@ header h1 {
   background-color: #2ecc71;
   transition: width 0.3s ease;
 }
+
 .goal-container {
-  margin-top: 20px;
+  max-width: 600px;
+  margin: auto;
+  margin-top: 40px;
+  padding: 20px;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  text-align: center;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+}
+
+.goal-container button {
+  margin: 10px 5px;
+  padding: 8px 12px;
+}
+
+.small-input {
+  margin: 10px 5px;
+  padding: 8px 12px;
+  width: 50px;
+  padding: 5px;
+  font-size: 16px;
 }
 
 .books-read {
@@ -562,6 +724,8 @@ header h1 {
   width: 100%;
   max-width: 300px;
   text-align: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .progress-bar {
