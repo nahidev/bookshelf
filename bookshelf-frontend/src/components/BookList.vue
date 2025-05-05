@@ -27,11 +27,9 @@
         Cambiar objetivo
       </button>
     </div>
-
     <div class="books-read">
       <p>Libros leídos: {{ books.length }}</p>
     </div>
-
     <div class="progress-container">
       <p>Progreso: {{ progressPercentage }}%</p>
       <div class="progress-bar">
@@ -60,8 +58,8 @@
           </svg>
         </button>
         <div v-if="showDropdown" class="dropdown-menu">
-          <button @click="exportBooks('json')" class="dropdown-item">Exportar JSON</button>
-          <button @click="exportBooks('csv')" class="dropdown-item">Exportar CSV</button>
+          <button @click="exportBooks('json')" class="dropdown-item">JSON</button>
+          <button @click="exportBooks('csv')" class="dropdown-item">CSV</button>
         </div>
       </div>
     </div>
@@ -74,7 +72,6 @@
           <input type="text" v-model="newBook.genre" placeholder="Género" required style="font-size: 16px;"/>
           <input type="date" v-model="newBook.readingDate" placeholder="Fecha de lectura" required style="font-size: 16px;"/>
           <input type="number" v-model="newBook.rating" placeholder="Nota" min="1" max="5" required style="font-size: 16px;"/>
-          <button type="button" @click="showImageModal = true">Añadir imagen</button>
           <div v-if="showImageModal" class="modal-overlay">
             <div class="modal-content">
               <h3>Introducir URL de imagen</h3>
@@ -109,7 +106,6 @@
           <button type="button" @click="showImageModal = true" class="add-image-button">
           Añadir imagen
         </button>
-        <!-- Modal para introducir URL -->
         <div v-if="showImageModal" class="modal-overlay">
           <div class="modal-content">
             <h4>Introduce la URL de la imagen</h4>
@@ -160,8 +156,8 @@ export default {
   name: "BookList",
   data() {
     return {
-      books: [],  // Lista de libros
-      newBook: {  // Datos del nuevo libro
+      books: [],  
+      newBook: {  
         title: "",
         author: "",
         genre: "",
@@ -169,10 +165,10 @@ export default {
         rating: null,
         imageUrl: "",
       },
-      bookToDelete: "", // ID del libro a eliminar
-      bookToEdit: null, // Datos del libro que se va a editar
-      isEditing: false, // Estado para mostrar el formulario de edición
-      confirmationMessage: "", // Mensaje de confirmación  
+      bookToDelete: "", 
+      bookToEdit: null, 
+      isEditing: false,
+      confirmationMessage: "",  
       confirmationType: "", 
       showDeleteConfirm: false,     
       goal: 0, 
@@ -181,7 +177,7 @@ export default {
       showImageModal: false,
       tempImageUrl: "",
       newImageUrl: "",
-      showDropdown: false, // Estado para mostrar/ocultar el menú desplegable
+      showDropdown: false, 
     };
   },
   mounted() {
@@ -193,9 +189,8 @@ export default {
     }  
     const savedImageUrl = localStorage.getItem('bookImage');
     if (savedImageUrl) {
-      // Si hay una imagen guardada, asignamos su URL al atributo imageUrl de los libros
       this.books.forEach(book => {
-        if (book.imageUrl === "") {  // Si un libro no tiene imagen, lo asignamos
+        if (book.imageUrl === "") {  
           book.imageUrl = savedImageUrl;
         }
       });
@@ -204,10 +199,10 @@ export default {
   computed: {
     progressPercentage() {
     if (this.goal === 0 || this.books.length === 0) {
-      return 0;  // Si no hay objetivo o no hay libros leídos, el progreso es 0
+      return 0;  
     }
     let percentage = (this.books.length / this.goal) * 100;
-    return Math.min(percentage, 100).toFixed(2);  // Limita al 100% como máximo
+    return Math.min(percentage, 100).toFixed(2);  
   },
   },
   methods: {
@@ -221,7 +216,6 @@ export default {
   addImageToBook() {
       this.newBook.imageUrl = this.tempImageUrl;
       
-      // Guardar la imagen para este libro específico en localStorage
       const booksFromStorage = JSON.parse(localStorage.getItem('books')) || [];
       booksFromStorage.push(this.newBook);
       localStorage.setItem('books', JSON.stringify(booksFromStorage));
@@ -232,7 +226,7 @@ export default {
     setGoal() {
       if (this.goalInput && !isNaN(this.goalInput)) {
       this.goal = parseInt(this.goalInput);
-      localStorage.setItem("readingGoal", this.goal);  // Guardar en localStorage
+      localStorage.setItem("readingGoal", this.goal); 
       this.editingGoal = false; 
     }
   },
@@ -245,7 +239,6 @@ export default {
       .then((dataFromApi) => {
         const booksFromStorage = JSON.parse(localStorage.getItem("books")) || [];
 
-        // Fusionar datos del servidor con los del localStorage (especialmente imageUrl)
         const mergedBooks = dataFromApi.map(book => {
           const localBook = booksFromStorage.find(b => b.id === book.id);
           return localBook ? { ...book, imageUrl: localBook.imageUrl || book.imageUrl } : book;
@@ -253,7 +246,6 @@ export default {
 
         this.books = mergedBooks;
 
-        // También actualizamos el localStorage para mantenerlo sincronizado
         localStorage.setItem("books", JSON.stringify(mergedBooks));
       })
       .catch((err) => console.error("Error:", err));
@@ -270,7 +262,7 @@ export default {
       if (!response.ok) {
         throw new Error("Error al guardar el libro");
       }
-      this.fetchBooks();  // Actualizar la lista de libros
+      this.fetchBooks();  
       this.confirmationMessage = "¡Libro añadido!";
       this.confirmationType = "success";
       setTimeout(() => {
@@ -303,23 +295,19 @@ export default {
         throw new Error("Error al actualizar el libro");
       }
 
-      // Actualizar el libro en el estado de Vue.js
       const index = this.books.findIndex((book) => book.id === this.bookToEdit.id);
       this.books[index] = this.bookToEdit;
 
-      // Actualizar el libro en el localStorage
       const booksFromStorage = JSON.parse(localStorage.getItem('books')) || [];
       const storageIndex = booksFromStorage.findIndex((book) => book.id === this.bookToEdit.id);
 
       if (storageIndex !== -1) {
-        booksFromStorage[storageIndex] = this.bookToEdit; // Actualiza la referencia del libro en el localStorage
-        localStorage.setItem('books', JSON.stringify(booksFromStorage)); // Guarda los cambios en localStorage
+        booksFromStorage[storageIndex] = this.bookToEdit; 
+        localStorage.setItem('books', JSON.stringify(booksFromStorage)); 
       }
 
-      // Cerrar el modal
       this.closeModal();
 
-      // Mostrar el mensaje de confirmación
       this.confirmationMessage = "Libro actualizado correctamente";
       this.confirmationType = "success";
       setTimeout(() => {
@@ -343,7 +331,7 @@ export default {
         if (!this.bookToDelete) {
           return;
         }
-        this.showDeleteConfirm = true;  // Mostrar confirmación de eliminación
+        this.showDeleteConfirm = true;  
       },
     deleteBook() {
       if (!this.bookToDelete) {
@@ -363,15 +351,15 @@ export default {
           setTimeout(() => {
             this.confirmationMessage = "";
           }, 3000);
-          this.showDeleteConfirm = false;  // Ocultar la confirmación
+          this.showDeleteConfirm = false; 
         })
         .catch((err) => console.error("Error:", err));
     },
     cancelDelete() {
-      this.showDeleteConfirm = false;  // Ocultar la confirmación
+      this.showDeleteConfirm = false;  
     },
     toggleDropdown() {
-      this.showDropdown = !this.showDropdown; // Alternar visibilidad del menú
+      this.showDropdown = !this.showDropdown; 
     },
     exportBooks(format) {
       fetch(`http://localhost:8080/api/bookshelf/export?format=${format}`)
@@ -440,7 +428,7 @@ header h1 {
 .book {
   display: flex;
   flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.8);  /* Fondo blanco semitransparente */
+  background-color: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   width: 250px;
   padding: 20px;
@@ -449,7 +437,7 @@ header h1 {
   height: 260px;
   background-size: cover;
   background-position: center;
-  position: relative;  /* Necesario para posicionar el contenido por encima de la imagen */
+  position: relative;
 }
 
 .book:hover {
@@ -460,14 +448,14 @@ header h1 {
   margin: 10px 0 5px;
   font-size: 1.2em;
   color: #333;
-  z-index: 2;  /* Se asegura de que el texto esté encima de la imagen */
+  z-index: 2;  
 }
 
 .book p {
   font-size: 0.9em;
   color: black;
   margin: 5px 0;
-  z-index: 2;  /* Se asegura de que el texto esté encima de la imagen */
+  z-index: 2; 
 }
 
 .rating {
@@ -476,11 +464,15 @@ header h1 {
 }
 
 .book-content {
-  position: relative;  /* Para que los elementos dentro del libro se ubiquen sobre la imagen */
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  flex: 1; 
   background-color: rgba(255, 255, 255, 0.6);
   border-radius: 5px;
-} /*El div book-content quede uniforme, ocupe el mismo espacio*/
+  padding: 10px;
+  z-index: 1;
+}
 
 .book img.book-image {
   width: 100%;
@@ -497,9 +489,9 @@ header h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.7); /* Fondo blanquecino con opacidad */
+  background: rgba(255, 255, 255, 0.6); 
   border-radius: 8px;
-  z-index: 0;  /* Asegura que el fondo esté debajo de la información */
+  z-index: 0;  
 }
 
 .form-container {
@@ -552,7 +544,7 @@ header h1 {
   font-size: 1em;
 }
 
-.delete-button {
+.delete-button {  
   background-color: #e23134;
   width: 40%;
   padding: 12px;
@@ -588,7 +580,7 @@ header h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
+  background-color: rgba(0, 0, 0, 0.5); 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -631,8 +623,8 @@ header h1 {
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 20px;
-  margin: 20px auto 10px; /* Centrado horizontal */
-  display: block;  /* Hace que el botón sea un bloque para que se pueda centrar */
+  margin: 20px auto 10px; 
+  display: block;  
 }
 
 .submit-button:hover {
@@ -649,8 +641,8 @@ header h1 {
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 10px;
-  margin: 20px auto 10px; /* Centrado horizontal */
-  display: block;  /* Hace que el botón sea un bloque para que se pueda centrar */
+  margin: 20px auto 10px; 
+  display: block; 
 }
 
 .close-button:hover {
@@ -658,7 +650,7 @@ header h1 {
 }
 
 .update-button, .goal-button {
-  margin-top: auto;  /* Empuja el botón hacia abajo dentro de su contenedor */
+  margin-top: auto;  
   padding: 12px 20px;
   background-color: black;
   color: white;
@@ -691,11 +683,11 @@ header h1 {
 }
 
 .confirmation-message.success {
-  background-color: #2ecc71; /* verde */
+  background-color: #2ecc71; 
 }
 
 .confirmation-message.error {
-  background-color: #e74c3c; /* rojo */
+  background-color: #e74c3c; 
 }
 
 .icon-check {
