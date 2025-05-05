@@ -1,4 +1,4 @@
-package com.nahidev.bookshelf;
+package com.nahidev.bookshelf.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GenerationType;

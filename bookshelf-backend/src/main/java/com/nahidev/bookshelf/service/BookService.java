@@ -1,5 +1,9 @@
-package com.nahidev.bookshelf;
+package com.nahidev.bookshelf.service;
 
+import com.nahidev.bookshelf.model.Book;
+import com.nahidev.bookshelf.repository.BookRepository;
+import com.nahidev.bookshelf.service.exporter.Exporter;
+import com.nahidev.bookshelf.service.exporter.ExporterFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,5 +46,14 @@ public class BookService {
         existing.setReadingDate(updatedBook.getReadingDate());
 
         bookRepository.save(existing);
-}
+    }
+
+    public String exportBooks(String format) {
+        Exporter exporter = ExporterFactory.getExporter(format);
+        List<Book> books = bookRepository.findAll();
+        return exporter.export(books);
+    }
+
+    // TODO DataValidator
+
 }

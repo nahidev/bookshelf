@@ -51,6 +51,20 @@
       </div>
     </div>
     </div>
+    <div class="export-import-container">
+      <div v-if="books.length > 0" class="dropdown">
+        <button class="export-button" @click="toggleDropdown">
+          Exportar
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="dropdown-icon">
+            <path d="M12 16l-6-6h4V4h4v6h4l-6 6zM5 18h14v2H5z" />
+          </svg>
+        </button>
+        <div v-if="showDropdown" class="dropdown-menu">
+          <button @click="exportBooks('json')" class="dropdown-item">Exportar JSON</button>
+          <button @click="exportBooks('csv')" class="dropdown-item">Exportar CSV</button>
+        </div>
+      </div>
+    </div>
     <div class="form-container">
       <div class="add-book-form">
         <h2>Añadir un nuevo libro</h2>
@@ -167,6 +181,7 @@ export default {
       showImageModal: false,
       tempImageUrl: "",
       newImageUrl: "",
+      showDropdown: false, // Estado para mostrar/ocultar el menú desplegable
     };
   },
   mounted() {
@@ -354,7 +369,29 @@ export default {
     },
     cancelDelete() {
       this.showDeleteConfirm = false;  // Ocultar la confirmación
-    }
+    },
+    toggleDropdown() {
+      this.showDropdown = !this.showDropdown; // Alternar visibilidad del menú
+    },
+    exportBooks(format) {
+      fetch(`http://localhost:8080/api/bookshelf/export?format=${format}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al exportar los libros");
+          }
+          return response.text();
+        })
+        .then((data) => {
+          const blob = new Blob([data], { type: format === "json" ? "application/json" : "text/csv" });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `books.${format}`;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((err) => console.error("Error:", err));
+    },
   }
 };
 </script>
@@ -743,4 +780,67 @@ header h1 {
   transition: width 0.3s ease;
 }
 
+.export-import-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.export-button {
+    background-color: #222; 
+    color: white;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.export-button:hover {
+    background-color: #444;
+    transform: scale(1.05);
+}
+
+.dropdown-icon {
+  width: 12px;
+  height: 12px;
+  fill: white;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  background-color: white;
+  color: #333;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+  background-color: #f4f4f4;
+}
 </style>

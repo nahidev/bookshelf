@@ -1,11 +1,12 @@
-package com.nahidev.bookshelf;
+package com.nahidev.bookshelf.controller;
 
+import com.nahidev.bookshelf.service.BookService;
+import com.nahidev.bookshelf.model.Book;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping(path= "api/bookshelf")
 public class BookController {
@@ -40,5 +41,10 @@ public class BookController {
     @PutMapping("{id}")
     public void putBookById(@PathVariable Integer id, @RequestBody Book book){
         bookService.putBookById(id, book);
+    }
+
+    @GetMapping("/export")
+    public String exportBooks(@RequestParam String format) {
+        return bookService.exportBooks(format);
     }
 }
